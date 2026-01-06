@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { addOffer, getProperty, type Property } from "../../lib/store";
+import { addOffer, getProperty, type Property } from "@/lib/store";
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const [property, setProperty] = useState<Property | null>(null);
@@ -10,7 +10,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const [company, setCompany] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [terms, setTerms] = useState("");
-
   const [sort, setSort] = useState<"high" | "low">("high");
 
   useEffect(() => {
@@ -39,62 +38,42 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         <Link href="/properties">← 物件一覧へ</Link>
       </p>
 
-      <h1 style={{ marginTop: 12 }}>{property.address}</h1>
+      <h1 style={{ marginTop: 8 }}>{property.address}</h1>
 
       <hr style={{ margin: "16px 0" }} />
 
-      <h2>買取条件を追加</h2>
+      <h2>買取情報を追加</h2>
 
-      <div style={{ display: "grid", gap: 12, maxWidth: 520 }}>
-        <div>
-          <label style={{ display: "block", marginBottom: 6 }}>会社名</label>
-          <input
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: 6 }}>買取金額（円）</label>
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            style={{ width: "100%", padding: 8 }}
-          />
-          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
-            例：3000万円 → 30000000
-          </div>
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: 6 }}>条件</label>
-          <textarea
-            value={terms}
-            onChange={(e) => setTerms(e.target.value)}
-            rows={4}
-            style={{ width: "100%", padding: 8 }}
-            placeholder="例）現況渡し / 測量あり / 瑕疵担保免責 など"
-          />
-        </div>
+      <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+        <input
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="会社名"
+          style={{ padding: 8 }}
+        />
+        <input
+          value={Number.isFinite(price) ? price : 0}
+          onChange={(e) => setPrice(Number(e.target.value))}
+          placeholder="買取金額（円）"
+          type="number"
+          style={{ padding: 8 }}
+        />
+        <input
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          placeholder="条件（例：現況渡し、測量なし等）"
+          style={{ padding: 8 }}
+        />
 
         <button
-          style={{ padding: "8px 16px" }}
+          style={{ padding: "8px 12px" }}
           onClick={() => {
             if (!company.trim()) return;
-            if (!Number.isFinite(price) || price <= 0) return;
+            if (!price || price <= 0) return;
 
-            addOffer(property.id, {
-              company: company.trim(),
-              price,
-              terms: terms.trim(),
-            });
+            addOffer(property.id, { company, price, terms });
+            setProperty(getProperty(property.id) ?? null);
 
-            // 再読み込み
-            setProperty(getProperty(params.id) ?? null);
-
-            // 入力クリア
             setCompany("");
             setPrice(0);
             setTerms("");
@@ -108,39 +87,23 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
 
       <h2>買取一覧</h2>
 
-      <div style={{ marginBottom: 12 }}>
-        並び替え：
-        <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ marginLeft: 8 }}>
-          <option value="high">金額が高い順</option>
-          <option value="low">金額が安い順</option>
-        </select>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span>並び替え：</span>
+        <button onClick={() => setSort("high")}>金額が高い順</button>
+        <button onClick={() => setSort("low")}>金額が低い順</button>
       </div>
 
       {offersSorted.length === 0 ? (
-        <p>まだ登録がありません。</p>
+        <p style={{ marginTop: 12 }}>まだ買取情報がありません。</p>
       ) : (
-        <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 900 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #444", padding: 8 }}>会社名</th>
-              <th style={{ textAlign: "right", borderBottom: "1px solid #444", padding: 8 }}>金額（円）</th>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #444", padding: 8 }}>条件</th>
-            </tr>
-          </thead>
-          <tbody>
-            {offersSorted.map((o) => (
-              <tr key={o.id}>
-                <td style={{ borderBottom: "1px solid #222", padding: 8 }}>{o.company}</td>
-                <td style={{ borderBottom: "1px solid #222", padding: 8, textAlign: "right" }}>
-                  {o.price.toLocaleString()}
-                </td>
-                <td style={{ borderBottom: "1px solid #222", padding: 8, whiteSpace: "pre-wrap" }}>
-                  {o.terms || "-"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul style={{ marginTop: 12 }}>
+          {offersSorted.map((o) => (
+            <li key={o.id} style={{ marginBottom: 8 }}>
+              <b>{o.company}</b>：{o.price.toLocaleString()}円
+              {o.terms ? `（${o.terms}）` : ""}
+            </li>
+          ))}
+        </ul>
       )}
     </main>
   );

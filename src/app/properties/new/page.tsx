@@ -2,51 +2,36 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createId, loadProperties, saveProperties } from "@/lib/store";
+import { addProperty } from "@/lib/store";
 
 export default function NewPropertyPage() {
   const router = useRouter();
   const [address, setAddress] = useState("");
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = address.trim();
-    if (!trimmed) return;
-
-    const props = loadProperties();
-    props.unshift({
-      id: createId(),
-      address: trimmed,
-      offers: [],
-      createdAt: new Date().toISOString(),
-    });
-    saveProperties(props);
-    router.push("/properties");
-  }
-
   return (
     <main style={{ padding: 24 }}>
-      <h1>物件を登録</h1>
+      <h1>新規物件を追加</h1>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 8, maxWidth: 520 }}>
-        <label>
-          住所（マンションの場合はマンション名）
-          <input
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="例：東京都港区〜 / ○○マンション"
-            style={{ width: "100%", padding: 8, marginTop: 6 }}
-          />
-        </label>
+      <label style={{ display: "block", marginTop: 12 }}>
+        住所（マンションの場合はマンション名）
+        <input
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="例）〇〇マンション / 東京都〇〇区..."
+          style={{ display: "block", width: "100%", marginTop: 8, padding: 8 }}
+        />
+      </label>
 
-        <button type="submit" style={{ padding: 10 }}>
-          登録する
-        </button>
-
-        <button type="button" onClick={() => router.back()} style={{ padding: 10 }}>
-          戻る
-        </button>
-      </form>
+      <button
+        style={{ marginTop: 16, padding: "8px 12px" }}
+        onClick={() => {
+          if (!address.trim()) return;
+          const p = addProperty(address);
+          router.push(`/properties/${p.id}`);
+        }}
+      >
+        登録して次へ
+      </button>
     </main>
   );
 }
