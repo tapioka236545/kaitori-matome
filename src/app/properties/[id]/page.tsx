@@ -1,157 +1,147 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { createId, loadProperties, saveProperties, Property } from "@/lib/store";
+import { addOffer, getProperty, type Property } from "../../lib/store";
 
-export default function PropertyDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const id = String(params.id);
-
+export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const [property, setProperty] = useState<Property | null>(null);
-  const [companyName, setCompanyName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [conditions, setConditions] = useState("");
-  const [sort, setSort] = useState<"high" | "new">("high");
+
+  const [company, setCompany] = useState("");
+  const [price, setPrice] = useState<number>(0);
+  const [terms, setTerms] = useState("");
+
+  const [sort, setSort] = useState<"high" | "low">("high");
 
   useEffect(() => {
-    const props = loadProperties();
-    const found = props.find((p) => p.id === id) ?? null;
-    setProperty(found);
-  }, [id]);
+    setProperty(getProperty(params.id) ?? null);
+  }, [params.id]);
 
-  const sortedOffers = useMemo(() => {
+  const offersSorted = useMemo(() => {
     if (!property) return [];
-    const offers = [...property.offers];
-    if (sort === "high") {
-      offers.sort((a, b) => b.amount - a.amount);
-    } else {
-      offers.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    }
-    return offers;
+    const arr = property.offers.slice();
+    arr.sort((a, b) => (sort === "high" ? b.price - a.price : a.price - b.price));
+    return arr;
   }, [property, sort]);
-
-  function addOffer(e: React.FormEvent) {
-    e.preventDefault();
-    if (!property) return;
-
-    const cn = companyName.trim();
-    const am = Number(amount);
-    if (!cn || !Number.isFinite(am)) return;
-
-    const props = loadProperties();
-    const idx = props.findIndex((p) => p.id === property.id);
-    if (idx === -1) return;
-
-    props[idx].offers.unshift({
-      id: createId(),
-      companyName: cn,
-      amount: am,
-      conditions: conditions.trim(),
-      createdAt: new Date().toISOString(),
-    });
-
-    saveProperties(props);
-    setProperty(props[idx]);
-
-    setCompanyName("");
-    setAmount("");
-    setConditions("");
-  }
 
   if (!property) {
     return (
       <main style={{ padding: 24 }}>
         <p>物件が見つかりませんでした。</p>
-        <button onClick={() => router.push("/properties")}>物件一覧へ戻る</button>
+        <Link href="/properties">← 物件一覧へ</Link>
       </main>
     );
   }
 
   return (
     <main style={{ padding: 24 }}>
-      <button onClick={() => router.push("/properties")}>← 物件一覧へ</button>
+      <p>
+        <Link href="/properties">← 物件一覧へ</Link>
+      </p>
+
       <h1 style={{ marginTop: 12 }}>{property.address}</h1>
 
-      <section style={{ marginTop: 18, padding: 12, border: "1px solid #333", borderRadius: 8 }}>
-        <h2>会社の買取情報を追加</h2>
-        <form onSubmit={addOffer} style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-          <label>
-            会社名
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 6 }}
-            />
-          </label>
+      <hr style={{ margin: "16px 0" }} />
 
-          <label>
-            買取金額（万円などルールは後で統一）
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="numeric"
-              style={{ width: "100%", padding: 8, marginTop: 6 }}
-              placeholder="例：5480"
-            />
-          </label>
+      <h2>買取条件を追加</h2>
 
-          <label>
-            条件（例：手付/引渡し時期/瑕疵免責など）
-            <textarea
-              value={conditions}
-              onChange={(e) => setConditions(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 6, minHeight: 80 }}
-            />
-          </label>
-
-          <button type="submit" style={{ padding: 10 }}>
-            追加する
-          </button>
-        </form>
-      </section>
-
-      <section style={{ marginTop: 18 }}>
-        <h2>買取一覧</h2>
-
-        <div style={{ margin: "8px 0" }}>
-          並び替え：
-          <button onClick={() => setSort("high")} disabled={sort === "high"} style={{ marginLeft: 8 }}>
-            金額が高い順
-          </button>
-          <button onClick={() => setSort("new")} disabled={sort === "new"} style={{ marginLeft: 8 }}>
-            新しい順
-          </button>
+      <div style={{ display: "grid", gap: 12, maxWidth: 520 }}>
+        <div>
+          <label style={{ display: "block", marginBottom: 6 }}>会社名</label>
+          <input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+          />
         </div>
 
-        {sortedOffers.length === 0 ? (
-          <p>まだ買取情報がありません。</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #333", padding: 8 }}>会社名</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #333", padding: 8 }}>金額</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #333", padding: 8 }}>条件</th>
+        <div>
+          <label style={{ display: "block", marginBottom: 6 }}>買取金額（円）</label>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            style={{ width: "100%", padding: 8 }}
+          />
+          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+            例：3000万円 → 30000000
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: "block", marginBottom: 6 }}>条件</label>
+          <textarea
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
+            rows={4}
+            style={{ width: "100%", padding: 8 }}
+            placeholder="例）現況渡し / 測量あり / 瑕疵担保免責 など"
+          />
+        </div>
+
+        <button
+          style={{ padding: "8px 16px" }}
+          onClick={() => {
+            if (!company.trim()) return;
+            if (!Number.isFinite(price) || price <= 0) return;
+
+            addOffer(property.id, {
+              company: company.trim(),
+              price,
+              terms: terms.trim(),
+            });
+
+            // 再読み込み
+            setProperty(getProperty(params.id) ?? null);
+
+            // 入力クリア
+            setCompany("");
+            setPrice(0);
+            setTerms("");
+          }}
+        >
+          追加する
+        </button>
+      </div>
+
+      <hr style={{ margin: "16px 0" }} />
+
+      <h2>買取一覧</h2>
+
+      <div style={{ marginBottom: 12 }}>
+        並び替え：
+        <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ marginLeft: 8 }}>
+          <option value="high">金額が高い順</option>
+          <option value="low">金額が安い順</option>
+        </select>
+      </div>
+
+      {offersSorted.length === 0 ? (
+        <p>まだ登録がありません。</p>
+      ) : (
+        <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 900 }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", borderBottom: "1px solid #444", padding: 8 }}>会社名</th>
+              <th style={{ textAlign: "right", borderBottom: "1px solid #444", padding: 8 }}>金額（円）</th>
+              <th style={{ textAlign: "left", borderBottom: "1px solid #444", padding: 8 }}>条件</th>
+            </tr>
+          </thead>
+          <tbody>
+            {offersSorted.map((o) => (
+              <tr key={o.id}>
+                <td style={{ borderBottom: "1px solid #222", padding: 8 }}>{o.company}</td>
+                <td style={{ borderBottom: "1px solid #222", padding: 8, textAlign: "right" }}>
+                  {o.price.toLocaleString()}
+                </td>
+                <td style={{ borderBottom: "1px solid #222", padding: 8, whiteSpace: "pre-wrap" }}>
+                  {o.terms || "-"}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {sortedOffers.map((o) => (
-                <tr key={o.id}>
-                  <td style={{ borderBottom: "1px solid #222", padding: 8 }}>{o.companyName}</td>
-                  <td style={{ borderBottom: "1px solid #222", padding: 8, textAlign: "right" }}>
-                    {o.amount.toLocaleString()}
-                  </td>
-                  <td style={{ borderBottom: "1px solid #222", padding: 8, whiteSpace: "pre-wrap" }}>
-                    {o.conditions || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+            ))}
+          </tbody>
+        </table>
+      )}
     </main>
   );
 }

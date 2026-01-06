@@ -1,38 +1,24 @@
-"use client";
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { loadProperties, Property } from "@/lib/store";
-
 export default function PropertiesPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
-
-  useEffect(() => {
-    setProperties(loadProperties());
-  }, []);
+  const properties = [
+    { id: "p1", address: "〇〇マンション 101" },
+    { id: "p2", address: "東京都中央区〇〇 1-2-3" },
+  ];
 
   return (
     <main style={{ padding: 24 }}>
       <h1>物件一覧</h1>
 
-      <div style={{ margin: "12px 0" }}>
-        <Link href="/properties/new">＋ 物件を新規登録</Link>
-      </div>
+      <ul>
+        {properties.map((p) => (
+          <li key={p.id}>
+            <a href={`/properties/${p.id}`}>{p.address}</a>
+          </li>
+        ))}
+      </ul>
 
-      {properties.length === 0 ? (
-        <p>まだ物件がありません。上の「新規登録」から追加してください。</p>
-      ) : (
-        <ul>
-          {properties.map((p) => (
-            <li key={p.id} style={{ marginBottom: 8 }}>
-              <Link href={`/properties/${p.id}`}>{p.address}</Link>
-              <span style={{ marginLeft: 8, opacity: 0.7 }}>
-                （{p.offers.length}件）
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <p>
+        <a href="/properties/new">＋ 新規物件を追加</a>
+      </p>
     </main>
   );
 }
