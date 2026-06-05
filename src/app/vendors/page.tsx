@@ -78,7 +78,8 @@ export default function VendorsPage() {
       const fd = new FormData();
       fd.append("image", file);
 
-      const res = await fetch("/api/parse-card", { method: "POST", body: fd });
+      const base = process.env.NEXT_PUBLIC_API_BASE ?? "";
+      const res = await fetch(`${base}/api/parse-card`, { method: "POST", body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "解析に失敗しました");

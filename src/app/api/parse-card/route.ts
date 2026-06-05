@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 function loadApiKey(): string {
   if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
   try {
@@ -77,10 +87,10 @@ export async function POST(req: NextRequest) {
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json(parsed);
+    return NextResponse.json(parsed, { headers: CORS_HEADERS });
   } catch (err: any) {
     console.error("parse-card error:", err?.message ?? err);
     const msg = err?.message ?? "名刺の解析に失敗しました";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500, headers: CORS_HEADERS });
   }
 }
