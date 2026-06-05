@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+const isCapacitorBuild = process.env.BUILD_TARGET === "ios";
+
 const nextConfig: NextConfig = {
-  output: "export",
+  ...(isCapacitorBuild ? { output: "export" } : {}),
   images: {
     unoptimized: true,
   },
