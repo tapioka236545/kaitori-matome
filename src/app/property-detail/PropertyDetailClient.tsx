@@ -38,6 +38,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 
 type RowForm = {
   introduced: boolean;
+  called: boolean;
   priceText: string;
   memo: string;
   favorite: boolean;
@@ -76,6 +77,7 @@ function normalizeStoredPriceToManYen(
 function createEmptyRowForm(): RowForm {
   return {
     introduced: false,
+    called: false,
     priceText: "",
     memo: "",
     favorite: false,
@@ -85,6 +87,7 @@ function createEmptyRowForm(): RowForm {
 function makeFormSignature(form: RowForm) {
   return JSON.stringify({
     introduced: form.introduced,
+    called: form.called,
     priceText: digitsOnly(form.priceText),
     memo: form.memo,
     favorite: form.favorite,
@@ -151,6 +154,7 @@ export default function PropertyDetailClient({
 
           const form: RowForm = {
             introduced: Boolean(row?.introduced),
+            called: Boolean(row?.called),
             priceText:
               normalizedPrice !== null
                 ? normalizedPrice.toLocaleString("ja-JP")
@@ -222,6 +226,7 @@ export default function PropertyDetailClient({
       const nextProperty = await upsertPropertyVendorRow(propertyId, {
         vendorId,
         introduced: nextForm.introduced,
+        called: nextForm.called,
         price: parseManYen(nextForm.priceText),
         memo: nextForm.memo,
         favorite: nextForm.favorite,
@@ -667,6 +672,28 @@ export default function PropertyDetailClient({
                           }
                         />
                         紹介
+                      </label>
+
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 8,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.called}
+                          onChange={(e) =>
+                            updateVendorForm(
+                              vendor.id,
+                              { called: e.target.checked },
+                              "immediate"
+                            )
+                          }
+                        />
+                        📞
                       </label>
 
                       <label

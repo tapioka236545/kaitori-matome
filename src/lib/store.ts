@@ -28,6 +28,7 @@ export type Vendor = {
 export type PropertyVendorRow = {
   vendorId: string;
   introduced: boolean;
+  called: boolean;
   price: number | null;
   memo: string;
   favorite: boolean;
@@ -70,6 +71,7 @@ type VendorInput = {
 type PropertyVendorRowInput = {
   vendorId: string;
   introduced: boolean;
+  called: boolean;
   price: number | null;
   memo: string;
   favorite: boolean;
@@ -131,6 +133,7 @@ function normalizePropertyVendorRow(raw: any): PropertyVendorRow {
   return {
     vendorId: typeof raw?.vendorId === "string" ? raw.vendorId : "",
     introduced: Boolean(raw?.introduced),
+    called: Boolean(raw?.called),
     price:
       typeof raw?.price === "number" && Number.isFinite(raw.price)
         ? raw.price
@@ -349,6 +352,7 @@ export async function upsertPropertyVendorRow(
   const nextRow: PropertyVendorRow = {
     vendorId: input.vendorId,
     introduced: Boolean(input.introduced),
+    called: Boolean(input.called),
     price:
       typeof input.price === "number" && Number.isFinite(input.price)
         ? input.price

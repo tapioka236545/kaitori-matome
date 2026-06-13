@@ -45,6 +45,7 @@ export default function VendorsPage() {
 
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState("");
+  const [vendorSearch, setVendorSearch] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -431,8 +432,34 @@ export default function VendorsPage() {
       {vendors.length === 0 ? (
         <p style={{ color: "var(--muted)" }}>まだ業者が登録されていません。</p>
       ) : (
+        <>
+          <input
+            value={vendorSearch}
+            onChange={(e) => setVendorSearch(e.target.value)}
+            placeholder="業者名・担当者で検索"
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "transparent",
+              color: "var(--text)",
+              marginBottom: 10,
+              boxSizing: "border-box",
+            }}
+          />
         <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
-          {vendors.map((v) => (
+          {vendors
+            .filter((v) => {
+              const kw = vendorSearch.trim().toLowerCase();
+              if (!kw) return true;
+              return (
+                v.name?.toLowerCase().includes(kw) ||
+                v.contactName?.toLowerCase().includes(kw)
+              );
+            })
+            .map((v) => (
             <li
               key={v.id}
               style={{
@@ -504,6 +531,7 @@ export default function VendorsPage() {
             </li>
           ))}
         </ul>
+        </>
       )}
     </main>
   );

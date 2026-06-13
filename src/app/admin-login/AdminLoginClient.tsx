@@ -63,6 +63,11 @@ export default function AdminLoginClient({
         <label style={{ display: "grid", gap: 6 }}>
           メールアドレス
           <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="管理者メールアドレス"
