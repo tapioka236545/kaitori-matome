@@ -119,6 +119,7 @@ export default function PropertyDetailClient({
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [selectedType, setSelectedType] = useState<TypeFilter>("all");
+  const [vendorSearch, setVendorSearch] = useState("");
 
   const lastSavedRef = useRef<Record<string, string>>({});
   const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>(
@@ -303,6 +304,15 @@ export default function PropertyDetailClient({
   const displayedVendors = useMemo(() => {
     let list = [...vendors];
 
+    const keyword = vendorSearch.trim().toLowerCase();
+    if (keyword) {
+      list = list.filter(
+        (vendor) =>
+          (vendor.name ?? "").toLowerCase().includes(keyword) ||
+          (vendor.contactName ?? "").toLowerCase().includes(keyword)
+      );
+    }
+
     if (selectedType !== "all") {
       list = list.filter((vendor) => (vendor.types ?? []).includes(selectedType));
     }
@@ -353,7 +363,7 @@ export default function PropertyDetailClient({
     });
 
     return list;
-  }, [vendors, forms, sortMode, filterMode, selectedType]);
+  }, [vendors, forms, sortMode, filterMode, selectedType, vendorSearch]);
 
   if (loading) {
     return (
@@ -440,6 +450,21 @@ export default function PropertyDetailClient({
               gap: 12,
             }}
           >
+            <input
+              value={vendorSearch}
+              onChange={(e) => setVendorSearch(e.target.value)}
+              placeholder="🔍 業者名・担当者で検索"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "transparent",
+                color: "var(--text)",
+                boxSizing: "border-box",
+              }}
+            />
+
             <div
               style={{
                 display: "flex",
@@ -565,7 +590,9 @@ export default function PropertyDetailClient({
               }}
             >
               <p style={{ margin: 0 }}>
-                {filterMode === "unanswered"
+                {vendorSearch.trim()
+                  ? "検索条件に一致する業者がありません。"
+                  : filterMode === "unanswered"
                   ? "未回答の業者はありません。"
                   : filterMode === "introduced"
                   ? "紹介済みの業者はありません。"
