@@ -301,6 +301,18 @@ export default function PropertyDetailClient({
     }).length;
   }, [vendors, forms]);
 
+  const topPrice = useMemo(() => {
+    let max: number | null = null;
+    for (const vendor of vendors) {
+      const form = forms[vendor.id];
+      const price = form ? parseManYen(form.priceText) : null;
+      if (price !== null && price > 0 && (max === null || price > max)) {
+        max = price;
+      }
+    }
+    return max;
+  }, [vendors, forms]);
+
   const displayedVendors = useMemo(() => {
     let list = [...vendors];
 
@@ -606,15 +618,25 @@ export default function PropertyDetailClient({
               {displayedVendors.map((vendor) => {
                 const form = forms[vendor.id] ?? createEmptyRowForm();
                 const saveState = saveStates[vendor.id] ?? "idle";
+                const rowPrice = parseManYen(form.priceText);
+                const isTop =
+                  topPrice !== null && rowPrice !== null && rowPrice === topPrice;
 
                 return (
                   <section
                     key={vendor.id}
                     style={{
-                      border: "1px solid var(--border)",
+                      border: isTop
+                        ? "1px solid rgba(255,203,71,0.65)"
+                        : "1px solid var(--border)",
                       borderRadius: 12,
                       padding: 16,
-                      background: "var(--card)",
+                      background: isTop
+                        ? "rgba(255,203,71,0.07)"
+                        : "var(--card)",
+                      boxShadow: isTop
+                        ? "0 0 18px rgba(255,203,71,0.12)"
+                        : undefined,
                     }}
                   >
                     <div
@@ -627,8 +649,33 @@ export default function PropertyDetailClient({
                       }}
                     >
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 20, fontWeight: 800 }}>
-                          {vendor.name?.trim() || "名称未入力"}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div style={{ fontSize: 20, fontWeight: 800 }}>
+                            {vendor.name?.trim() || "名称未入力"}
+                          </div>
+                          {isTop && (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 800,
+                                padding: "3px 10px",
+                                borderRadius: 999,
+                                background: "rgba(255,203,71,0.18)",
+                                border: "1px solid rgba(255,203,71,0.5)",
+                                color: "#ffd76e",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              🏆 最高値
+                            </span>
+                          )}
                         </div>
 
                         <details style={{ marginTop: 8 }}>
