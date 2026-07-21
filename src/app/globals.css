@@ -287,3 +287,28 @@ button, .btn {
   }
 }
 
+/* ===== Admin accordion ===== */
+.adminGroup summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.adminGroup summary::-webkit-details-marker {
+  display: none;
+}
+
+.adminGroup .chev {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.adminGroup[open] .chev {
+  transform: rotate(90deg);
+}
+
+.adminGroup summary:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+

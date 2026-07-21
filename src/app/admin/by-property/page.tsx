@@ -62,14 +62,26 @@ export default function AdminByPropertyPage() {
       map.get(key)!.rows.push(row);
     }
 
-    let list = Array.from(map.values()).map((group) => ({
-      ...group,
-      rows: [...group.rows].sort(
+    let list = Array.from(map.values()).map((group) => {
+      const sortedRows = [...group.rows].sort(
         (a, b) =>
-          (normalizeStoredPriceToManYen(b.price) ?? 0) -
-          (normalizeStoredPriceToManYen(a.price) ?? 0)
-      ),
-    }));
+          (normalizeStoredPriceToManYen(b.price) ?? -1) -
+          (normalizeStoredPriceToManYen(a.price) ?? -1)
+      );
+
+      const answered = sortedRows.filter(
+        (r) => normalizeStoredPriceToManYen(r.price) !== null
+      ).length;
+
+      const topPrice = normalizeStoredPriceToManYen(sortedRows[0]?.price);
+
+      return {
+        ...group,
+        rows: sortedRows,
+        answered,
+        topPrice,
+      };
+    });
 
     const keyword = searchText.trim().toLowerCase();
     if (keyword) {
@@ -82,6 +94,12 @@ export default function AdminByPropertyPage() {
       a.propertyName.localeCompare(b.propertyName, "ja")
     );
   }, [rows, searchText]);
+
+  const totalAnswered = useMemo(
+    () =>
+      rows.filter((r) => normalizeStoredPriceToManYen(r.price) !== null).length,
+    [rows]
+  );
 
   return (
     <main className="container safeArea">
@@ -100,12 +118,60 @@ export default function AdminByPropertyPage() {
 
       <hr style={{ margin: "16px 0", borderColor: "var(--border)" }} />
 
+      {/* 統計バー */}
+      {!loading && rows.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
+          <div
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              background: "rgba(74,163,255,0.1)",
+              border: "1px solid rgba(74,163,255,0.3)",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            物件 {grouped.length}件
+          </div>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              background: "rgba(74,163,255,0.1)",
+              border: "1px solid rgba(74,163,255,0.3)",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            紹介 {rows.length}件
+          </div>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              background: "rgba(74,163,255,0.1)",
+              border: "1px solid rgba(74,163,255,0.3)",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            回答済 {totalAnswered}件
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: 6, maxWidth: 520, marginBottom: 16 }}>
-        <label style={{ fontWeight: 700 }}>物件名検索</label>
         <input
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          placeholder="物件名で検索"
+          placeholder="🔍 物件名で検索"
           style={{
             width: "100%",
             padding: "10px 12px",
@@ -114,6 +180,7 @@ export default function AdminByPropertyPage() {
             background: "transparent",
             color: "var(--text)",
             fontSize: 15,
+            boxSizing: "border-box",
           }}
         />
       </div>
@@ -121,58 +188,147 @@ export default function AdminByPropertyPage() {
       {loading ? (
         <p>読み込み中...</p>
       ) : grouped.length === 0 ? (
-        <p>管理者用の買取データがありません。</p>
+        <p>
+          {searchText.trim()
+            ? "検索条件に一致する物件がありません。"
+            : "管理者用の買取データがありません。"}
+        </p>
       ) : (
-        <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gap: 8 }}>
           {grouped.map((group) => (
-            <section
+            <details
               key={group.propertyId || group.propertyName}
+              className="adminGroup"
               style={{
                 border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: 14,
+                borderRadius: 12,
                 background: "var(--card)",
+                overflow: "hidden",
               }}
             >
-              <h2 style={{ marginTop: 0, marginBottom: 10 }}>
-                {group.propertyName}
-              </h2>
+              <summary
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 14px",
+                }}
+              >
+                <span className="chev">▶</span>
+
+                <span
+                  style={{
+                    fontWeight: 800,
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {group.propertyName}
+                </span>
+
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {group.answered}/{group.rows.length}件
+                </span>
+
+                <span
+                  style={{
+                    fontWeight: 800,
+                    fontSize: 14,
+                    color:
+                      group.topPrice !== null ? "var(--accent)" : "var(--muted)",
+                    flexShrink: 0,
+                    minWidth: 80,
+                    textAlign: "right",
+                  }}
+                >
+                  {group.topPrice !== null
+                    ? `${formatWithComma(group.topPrice)}万円`
+                    : "未回答"}
+                </span>
+              </summary>
 
               <ul
                 style={{
                   listStyle: "none",
-                  padding: 0,
+                  padding: "4px 14px 12px",
                   margin: 0,
                   display: "grid",
-                  gap: 8,
+                  gap: 6,
                 }}
               >
-                {group.rows.map((row) => {
+                {group.rows.map((row, i) => {
                   const price = normalizeStoredPriceToManYen(row.price);
+                  const isTop = i === 0 && price !== null;
 
                   return (
                     <li
                       key={row.id}
                       style={{
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        padding: 10,
-                        background: "rgba(255,255,255,0.03)",
+                        borderTop: "1px solid var(--border)",
+                        padding: "8px 2px 4px",
                       }}
                     >
-                      <div style={{ fontWeight: 800 }}>{row.vendorName}</div>
-                      <div style={{ marginTop: 4 }}>
-                        金額：
-                        {price !== null ? `${formatWithComma(price)}万円` : "未入力"}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: 14,
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {isTop ? "🏆 " : ""}
+                          {row.vendorName}
+                        </span>
+
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 14,
+                            color: price !== null ? "var(--text)" : "var(--muted)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {price !== null
+                            ? `${formatWithComma(price)}万円`
+                            : "未回答"}
+                        </span>
                       </div>
-                      <div style={{ marginTop: 4, color: "var(--muted)" }}>
-                        備考：{row.memo?.trim() || "なし"}
-                      </div>
+
+                      {row.memo?.trim() && (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--muted)",
+                            marginTop: 2,
+                          }}
+                        >
+                          {row.memo}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
               </ul>
-            </section>
+            </details>
           ))}
         </div>
       )}
